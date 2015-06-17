@@ -13,6 +13,7 @@
 
 @property (weak, nonatomic) IBOutlet JellyView *testView;
 @property (weak, nonatomic) IBOutlet UIButton *typeButton;
+@property (weak, nonatomic) IBOutlet UISwitch *verticesSwitch;
 
 @end
 
@@ -30,8 +31,8 @@
     _testView.inertia       = 0.5;
     _testView.attenuation   = 0.1;    // 剛性.
     _testView.fluctuation   = 0.8;    // 反発力.
+    _testView.verticesAnimationRate = 0.3f;
     _testView.jellyColor    = [UIColor colorWithRed:0.9 green:0.1 blue:0.1 alpha:0.6];
-    
     t=-1;
 
 }
@@ -42,9 +43,20 @@
 - (IBAction)onClickedTypeButton:(id)sender {
     t++;
     if(t==eJellyViewPresetMax)t=0;
-    [_testView setParamsWithPresetType:t];
     [_typeButton setTitle:[NSString stringWithFormat:@"やわらかLV %ld", (long)t]
                  forState:UIControlStateNormal];
+    [self changeParameters];
+}
+
+- (IBAction)onChangedVerticesSwitch:(id)sender {
+    [self changeParameters];
+}
+
+- (void)changeParameters {
+    [_testView setParamsWithPresetType:t];
+    if ( ! self.verticesSwitch.isOn ) {
+        _testView.verticesAnimationRate = 0.0f;
+    }
 }
 
 

@@ -75,26 +75,31 @@
             self.inertia       = 0.2;    // 慣性.
             self.attenuation   = 0.6;    // 剛性.
             self.fluctuation   = 0.3;    // 反発力.
+            self.verticesAnimationRate = 0.2;
             break;
         case eJellyViewPresetHard:
             self.inertia       = 0.3;    // 慣性.
             self.attenuation   = 0.3;    // 剛性.
             self.fluctuation   = 0.6;    // 反発力.
+            self.verticesAnimationRate = 0.5;
             break;
         case eJellyViewPresetMiddle:
             self.inertia       = 0.5;    // 慣性.
             self.attenuation   = 0.2;    // 剛性.
             self.fluctuation   = 0.7;    // 反発力.
+            self.verticesAnimationRate = 0.8;
             break;
         case eJellyViewPresetSoft:
             self.inertia       = 0.7;    // 慣性.
             self.attenuation   = 0.15;    // 剛性.
             self.fluctuation   = 0.8;    // 反発力.
+            self.verticesAnimationRate = 0.8;
             break;
         case eJellyViewPresetVerySoft:
             self.inertia       = 0.8;    // 慣性.
             self.attenuation   = 0.05;    // 剛性.
             self.fluctuation   = 0.9;    // 反発力.
+            self.verticesAnimationRate = 1.2;
             break;
         default:
             break;
@@ -128,20 +133,33 @@
 - (void)drawRect:(CGRect)rect {
     [super drawRect:rect];
 
+    CGFloat vp[4];
+    for (int i=0;i<4;i++) {
+        vp[i] = p[i] * self.verticesAnimationRate;
+    }
+    vp[1] = -vp[1];
+    vp[2] = -vp[2];
+
     //
     // ベジエ曲線または直線を４本組み合わせた範囲を塗りつぶす.
     //
     UIBezierPath* path = [UIBezierPath bezierPath];
-    [path moveToPoint:CGPointMake(_jellyInsets.left, _jellyInsets.top)];
+    [path moveToPoint:CGPointMake(_jellyInsets.left+vp[0], _jellyInsets.top+vp[3])]; // 左上.
 
     // コントロールポイントを 辺を３等分したあたりに置いて 垂直方向に移動させる.
     // 位置 p[] は、辺を３等分する点からコントロールポイントまでの距離.
     CGSize ctrl = CGSizeMake((self.bounds.size.width-_jellyInsets.left-_jellyInsets.right) / 3,
                              (self.bounds.size.height-_jellyInsets.top-_jellyInsets.bottom) / 3);
-
+    vp[0] = MIN(vp[0], ctrl.height);
+    vp[1] = MIN(vp[1], ctrl.width);
+    vp[2] = MIN(vp[2], ctrl.height);
+    vp[3] = MIN(vp[3], ctrl.width);
+    
     // 上辺.
     if ( _jellyInsets.top>0 && ABS(p[0])>0.01 ) {
-        [path addCurveToPoint:CGPointMake( self.bounds.size.width-_jellyInsets.right, _jellyInsets.top)
+        
+        [path addCurveToPoint:CGPointMake( self.bounds.size.width-_jellyInsets.right-vp[0],
+                                          _jellyInsets.top+vp[1]) // 右上.
                 controlPoint1:CGPointMake( _jellyInsets.left + ctrl.width, _jellyInsets.top + p[0])
                 controlPoint2:CGPointMake( self.bounds.size.width-_jellyInsets.right - ctrl.width, _jellyInsets.top + p[0])];
     }
@@ -150,7 +168,8 @@
     }
     // 右辺.
     if ( _jellyInsets.right>0 && ABS(p[1])>0.01) {
-        [path addCurveToPoint:CGPointMake( self.bounds.size.width-_jellyInsets.right, self.bounds.size.height - _jellyInsets.bottom)
+        [path addCurveToPoint:CGPointMake( self.bounds.size.width-_jellyInsets.right-vp[2],
+                                          self.bounds.size.height - _jellyInsets.bottom-vp[1])//右下.
                 controlPoint1:CGPointMake( self.bounds.size.width-_jellyInsets.right+p[1], _jellyInsets.top+ctrl.height)
                 controlPoint2:CGPointMake( self.bounds.size.width-_jellyInsets.right+p[1], self.bounds.size.height - _jellyInsets.bottom-+ctrl.height)];
     }
@@ -159,7 +178,8 @@
     }
     // 下辺.
     if ( _jellyInsets.bottom>0 && ABS(p[2])>0.01) {
-        [path addCurveToPoint:CGPointMake( _jellyInsets.left, self.bounds.size.height- _jellyInsets.bottom)
+        [path addCurveToPoint:CGPointMake( _jellyInsets.left+vp[2],
+                                          self.bounds.size.height- _jellyInsets.bottom-vp[3])//左下.
                 controlPoint1:CGPointMake( self.bounds.size.width-_jellyInsets.right - ctrl.width, self.bounds.size.height- _jellyInsets.bottom + p[2] )
                 controlPoint2:CGPointMake(_jellyInsets.left + ctrl.width, self.bounds.size.height - _jellyInsets.bottom + p[2] )];
     }
@@ -168,7 +188,8 @@
     }
     // 左辺.
     if ( _jellyInsets.right>0 && ABS(p[3])>0.01) {
-        [path addCurveToPoint:CGPointMake( _jellyInsets.left, _jellyInsets.top )
+        [path addCurveToPoint:CGPointMake( _jellyInsets.left+vp[0],
+                                          _jellyInsets.top+vp[3] )//左上.
                 controlPoint1:CGPointMake( _jellyInsets.left+p[3], self.bounds.size.height - _jellyInsets.bottom-ctrl.height)
                 controlPoint2:CGPointMake( _jellyInsets.left+p[3], _jellyInsets.top+ctrl.height )];
     }
@@ -191,6 +212,9 @@
     CGSize d = CGSizeMake(cp.x-prevCenter.x, cp.y-prevCenter.y);
     prevCenter = cp;
 
+    CGSize vMax = CGSizeMake((self.bounds.size.width-_jellyInsets.left-_jellyInsets.right) / 10,
+                             (self.bounds.size.height-_jellyInsets.top-_jellyInsets.bottom) / 10);
+    
     BOOL needsDisplay = NO;
     for (int i=0; i<4; i++) {
         v[i] -= ((i%2) ?d.width:d.height) * _inertia;   // 速度 -= 自Viewの移動量 * 係数.
@@ -200,6 +224,10 @@
         needsDisplay |= (p[i]>0.01) || (p[i]<-0.01);
         needsDisplay |= (v[i]>0.01) || (v[i]<-0.01);    // 位置,速度 がすべてしきい値を下回ったらアニメーションを止める.
     }
+    v[0] = MIN(MAX(-vMax.height,v[0]),vMax.height);
+    v[1] = MIN(MAX(-vMax.width,v[1]),vMax.width);
+    v[2] = MIN(MAX(-vMax.height,v[2]),vMax.height);
+    v[3] = MIN(MAX(-vMax.width,v[3]),vMax.width);
 
     if ( needsDisplay ) {
         // 再描画が必要.

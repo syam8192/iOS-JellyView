@@ -46,7 +46,8 @@ typedef enum : NSUInteger {
 @property (nonatomic, assign) CGFloat attenuation;
 // 反発力（振動の速さ）（0-1）
 @property (nonatomic, assign) CGFloat fluctuation;
-
+// 辺の歪みによる頂点の変形の度合い. 負数にすると歪み方が逆になる. 0にすると頂点が固定される.
+@property (nonatomic, assign) CGFloat verticesAnimationRate;
 
 /**
  * アニメーション開始.（Windowに追加された時点で自動的に呼ばれてる）
